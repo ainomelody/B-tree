@@ -39,7 +39,6 @@ public:
 	std::vector<Item> RangeSerach(const Item& LBound, const Item& UBound);
 };
 
-#include "Btree.h"
 #include <cstring>
 
 using namespace std;
