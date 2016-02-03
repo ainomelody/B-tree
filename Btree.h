@@ -302,6 +302,9 @@ bool B_tree<Item>::insertItem(const Item &toInsert)
 template <typename Item>
 void B_tree<Item>::deleteNode(BTNode *node)
 {
+	if (node == NULL)
+		return;
+	
 	delete []node->key;
 	delete []node->ptr;
 	delete node;
