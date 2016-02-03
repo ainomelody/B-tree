@@ -5,8 +5,6 @@
 #include <cstring>
 #include <queue>
 
-using namespace std;
-
 template<typename Item>
 class B_tree
 {
@@ -104,7 +102,7 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 	
 	while (!finished)
 	{
-		memmove(delLoc.pt->key + delLoc.i, delLoc.pt->key + delLoc.i + 1, sizeof(Item) * (delLoc.pt->keynum - delLoc.i));	//修改关键字的顺序表
+		std::memmove(delLoc.pt->key + delLoc.i, delLoc.pt->key + delLoc.i + 1, sizeof(Item) * (delLoc.pt->keynum - delLoc.i));	//修改关键字的顺序表
 		
 		if (delLoc.pt == root && delLoc.pt->keynum > 2 ||
 			delLoc.pt->keynum > minKeyNum)					//情况1，删除完成	
@@ -151,7 +149,7 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 						lsib->ptr[lsib->keynum + i] = delLoc.pt->ptr[i];
 					
 					deleteNode(delLoc.pt);
-					memmove(lsib->parent->ptr + index, lsib->parent->ptr + index + 1, sizeof(BTNode *) *(lsib->parent->keynum - index));
+					std::memmove(lsib->parent->ptr + index, lsib->parent->ptr + index + 1, sizeof(BTNode *) *(lsib->parent->keynum - index));
 					lsib->parent->ptr[lsib->parent->keynum] = NULL;
 					
 					delLoc.pt = lsib->parent;								//对父结点中的关键字执行删除操作
@@ -159,9 +157,9 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 				}
 				else if (rsib != NULL)
 				{
-					memmove(rsib->key + 1 + delLoc.pt->keynum, rsib->key, sizeof(Item) * (delLoc.pt + 1));
+					std::memmove(rsib->key + 1 + delLoc.pt->keynum, rsib->key, sizeof(Item) * (delLoc.pt + 1));
 					rsib->keynum += delLoc.pt->keynum + 1;
-					memmove(rsib->ptr + 1 + delLoc.pt, rsib->ptr, sizeof(BTNode *) * (delLoc.pt + 1));
+					std::memmove(rsib->ptr + 1 + delLoc.pt, rsib->ptr, sizeof(BTNode *) * (delLoc.pt + 1));
 					
 					for (int i = 1; i <= delLoc.pt->keynum; i++)	//复制剩余关键字
 						rsib->key[i] = delLoc.pt->key[i];
@@ -171,7 +169,7 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 						rsib->ptr[i] = delLoc.pt->ptr[i];
 					
 					deleteNode(delLoc.pt);
-					memmove(rsib->parent->ptr + index, rsib->parent->ptr + index + 1, sizeof(BTNode *) *(rsib->parent->keynum - index));
+					std::memmove(rsib->parent->ptr + index, rsib->parent->ptr + index + 1, sizeof(BTNode *) *(rsib->parent->keynum - index));
 					rsib->parent->ptr[rsib->parent->keynum] = NULL;
 					
 					delLoc.pt = rsib->parent;
@@ -200,7 +198,7 @@ typename B_tree<Item>::BTNode * B_tree<Item>::newNode()
 	node->keynum = 0;
 	node->key = new Item[n + 1];
 	node->ptr = new BTNode * [n + 1];
-	memset(node->ptr, 0, sizeof(BTNode *) * (n + 1));	//将全部指针设置为NULL
+	std::memset(node->ptr, 0, sizeof(BTNode *) * (n + 1));	//将全部指针设置为NULL
 	
 	return node;
 }
@@ -253,8 +251,8 @@ bool B_tree<Item>::insertItem(const Item &toInsert)
 	while (!finished && insLoc.pt != NULL)
 	{
 		/*移动顺序表，插入关键字和指针*/
-		memmove(insLoc.pt->key + insLoc.i, insLoc.pt->key + insLoc.i + 1, sizeof(Item) * (insLoc.pt->keynum + 1 - insLoc.i));
-		memmove(insLoc.pt->ptr + insLoc.i, insLoc.pt->ptr + insLoc.i + 1, sizeof(BTNode *) * (insLoc.pt->keynum + 1 - insLoc.i));
+		std::memmove(insLoc.pt->key + insLoc.i, insLoc.pt->key + insLoc.i + 1, sizeof(Item) * (insLoc.pt->keynum + 1 - insLoc.i));
+		std::memmove(insLoc.pt->ptr + insLoc.i, insLoc.pt->ptr + insLoc.i + 1, sizeof(BTNode *) * (insLoc.pt->keynum + 1 - insLoc.i));
 		insLoc.pt->key[insLoc.i] = x;
 		insLoc.pt->ptr[insLoc.i] = ap;
 		insLoc.pt->keynum++;
@@ -313,7 +311,7 @@ void B_tree<Item>::deleteNode(BTNode *node)
 template <typename Item>
 B_tree<Item>::~B_tree()
 {
-	queue<BTNode *> que;
+	std::queue<BTNode *> que;
 	BTNode *node;
 	
 	que.push(root);
@@ -323,7 +321,11 @@ B_tree<Item>::~B_tree()
 		node = que.front();
 		que.pop();
 		for (int i = 0; i <= node->keynum; i++)
-			que.push(node->ptr[i]);
+			if (node->ptr[i] != NULL)
+				que.push(node->ptr[i]);
+			else
+				break;
+			
 		deleteNode(node);
 	}
 }
