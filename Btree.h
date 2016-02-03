@@ -2,6 +2,10 @@
 #define BTREE_H
 
 #include<vector>
+#include <cstring>
+#include <queue>
+
+using namespace std;
 
 template<typename Item>
 class B_tree
@@ -31,17 +35,13 @@ private:
 	
 public:
 	B_tree(const int order = 4);
-	//virtual ~B_tree();
+	~B_tree();
 
 	bool insertItem(const Item &toInsert);
 	bool deleteItem(const Item &toDelete);
 	//Result search(const Item &k);
 	std::vector<Item> RangeSerach(const Item& LBound, const Item& UBound);
 };
-
-#include <cstring>
-
-using namespace std;
 
 template<typename Item>
 int B_tree<Item>::indexInParent(BTNode *node)
@@ -305,6 +305,24 @@ void B_tree<Item>::deleteNode(BTNode *node)
 	delete []node->key;
 	delete []node->ptr;
 	delete node;
+}
+
+template <typename Item>
+B_tree<Item>::~B_tree()
+{
+	queue<BTNode *> que;
+	BTNode *node;
+	
+	que.push(root);
+	
+	while(!que.empty())
+	{
+		node = que.front();
+		que.pop();
+		for (int i = 0; i <= node->keynum; i++)
+			que.push(node->ptr[i]);
+		deleteNode(node);
+	}
 }
 
 #endif
