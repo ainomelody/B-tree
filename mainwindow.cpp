@@ -3,7 +3,7 @@
 #include <QDesktopWidget>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent), tree(NULL)
 {
     /*设置阶数的UI*/
 
@@ -67,4 +67,42 @@ void MainWindow::ok_clicked()
     btn_rgsearch->setGeometry(386, 85, 60, 30);
     btn_rgsearch->setText(tr("区间查找"));
     btn_rgsearch->show();
+
+    btn_cont = new QPushButton(this);
+    btn_cont->setText(tr("继续"));
+    btn_cont->setGeometry(0,0, 50, 20);
+
+    minPoint = pos();
+}
+
+void MainWindow::execOpr()
+{
+    btn_add->hide();
+    btn_del->hide();
+    btn_search->hide();
+    btn_rgsearch->hide();
+    btn_cont->show();
+    lbl_tip->hide();
+
+    QDesktopWidget desktop;
+    QRect rc = desktop.screenGeometry();
+
+    setMaximumSize(rc.width(), rc.height());
+    setWindowState(Qt::WindowMaximized);
+    setFixedSize(rc.width(), rc.height());
+    move(-7, 0);
+
+}
+
+void MainWindow::chooseOpr()
+{
+    btn_add->show();
+    btn_del->show();
+    btn_search->show();
+    btn_rgsearch->show();
+    btn_cont->hide();
+    lbl_tip->show();
+
+    setFixedSize(500, 200);
+    move(minPoint);
 }
