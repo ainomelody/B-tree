@@ -23,6 +23,7 @@ private:
 
 	BTNode *root;
 	int n;
+    int levelNum;           //层数，绘图用
 	
 	Result searchBTree(const Item & toSearch);
 	int indexInParent(BTNode *node);
@@ -39,6 +40,7 @@ public:
 	bool deleteItem(const Item &toDelete);
 	//Result search(const Item &k);
 	std::vector<Item> RangeSerach(const Item& LBound, const Item& UBound);
+    int getLevelNum();
 };
 
 template<typename Item>
@@ -181,6 +183,7 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 					deleteNode(root);
 					root = node;
 					finished = true;
+                    levelNum--;
 				}
 			}
 		}
@@ -208,6 +211,7 @@ B_tree<Item>::B_tree(const int order)
 {
 	n = order;
 	root = newNode();				//一个key数为0的结点表示空树
+    levelNum = 1;
 }
 
 template<typename Item>
@@ -293,6 +297,7 @@ bool B_tree<Item>::insertItem(const Item &toInsert)
 		newRoot->ptr[0] = insLoc.pt;
 		newRoot->ptr[1] = ap;
 		root = newRoot;
+        levelNum++;         //层数加1
 	}
 	return true;
 }
@@ -328,6 +333,12 @@ B_tree<Item>::~B_tree()
 			
 		deleteNode(node);
 	}
+}
+
+template <typename Item>
+int B_tree<Item>::getLevelNum()
+{
+    return levelNum;
 }
 
 #endif

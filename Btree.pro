@@ -13,7 +13,9 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    paintwidget.cpp
 
 HEADERS  += mainwindow.h \
-    Btree.h
+    Btree.h \
+    paintwidget.h

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include <QMessageBox>
 #include <QDesktopWidget>
+#include <QPainter>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tree(NULL)
@@ -70,9 +71,16 @@ void MainWindow::ok_clicked()
 
     btn_cont = new QPushButton(this);
     btn_cont->setText(tr("继续"));
-    btn_cont->setGeometry(0,0, 50, 20);
+
 
     minPoint = pos();
+    area = new QScrollArea(this);
+    area->hide();
+    paint = new paintWidget(this);
+    area->setWidget(paint);
+    paint->hide();
+    connect(btn_add, SIGNAL(clicked(bool)), this, SLOT(execOpr()));
+    connect(btn_cont, SIGNAL(clicked(bool)), this, SLOT(chooseOpr()));
 }
 
 void MainWindow::execOpr()
@@ -81,6 +89,7 @@ void MainWindow::execOpr()
     btn_del->hide();
     btn_search->hide();
     btn_rgsearch->hide();
+
     btn_cont->show();
     lbl_tip->hide();
 
@@ -91,6 +100,10 @@ void MainWindow::execOpr()
     setWindowState(Qt::WindowMaximized);
     setFixedSize(rc.width(), rc.height());
     move(-7, 0);
+    btn_cont->setGeometry(width() / 2 - 35,0, 70, 30);
+    area->setGeometry(0, 50, width(), height());
+    paint->setGeometry(0, 0, width(), height());
+    area->show();
 
 }
 
@@ -101,8 +114,12 @@ void MainWindow::chooseOpr()
     btn_search->show();
     btn_rgsearch->show();
     btn_cont->hide();
+    paint->hide();
+    area->hide();
     lbl_tip->show();
+
 
     setFixedSize(500, 200);
     move(minPoint);
+
 }

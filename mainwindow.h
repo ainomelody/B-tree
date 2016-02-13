@@ -7,6 +7,8 @@
 #include <QLabel>
 #include "Btree.h"
 #include <QPoint>
+#include "paintwidget.h"
+#include <QScrollArea>
 
 class MainWindow : public QMainWindow
 {
@@ -18,6 +20,8 @@ private:
     QLabel *lbl_tip;
     B_tree<int> *tree;
     QPoint minPoint;
+    QScrollArea *area;
+    paintWidget *paint;
 
 private slots:
     void ok_clicked();
