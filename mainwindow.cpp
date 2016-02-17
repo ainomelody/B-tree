@@ -2,9 +2,13 @@
 #include <QMessageBox>
 #include <QDesktopWidget>
 #include <QPainter>
+#include "windows.h"
+#include <QDebug>
+
+extern B_tree<int> *tree;
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), tree(NULL)
+    : QMainWindow(parent)
 {
     /*设置阶数的UI*/
 
@@ -26,7 +30,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    delete tree;
+    if (tree != NULL)
+        delete tree;
 }
 
 void MainWindow::ok_clicked()
@@ -79,6 +84,7 @@ void MainWindow::ok_clicked()
     paint = new paintWidget(this);
     area->setWidget(paint);
     paint->hide();
+    area->setAlignment(Qt::AlignCenter);                            //居中显示
     connect(btn_add, SIGNAL(clicked(bool)), this, SLOT(execOpr()));
     connect(btn_cont, SIGNAL(clicked(bool)), this, SLOT(chooseOpr()));
 }
@@ -94,16 +100,20 @@ void MainWindow::execOpr()
     lbl_tip->hide();
 
     QDesktopWidget desktop;
-    QRect rc = desktop.screenGeometry();
+    QRect rc = desktop.availableGeometry();
 
-    setMaximumSize(rc.width(), rc.height());
-    setWindowState(Qt::WindowMaximized);
-    setFixedSize(rc.width(), rc.height());
+    /*获取任务栏高度*/
+    RECT rect;
+    HWND hWnd = FindWindowW(TEXT("Shell_TrayWnd"), NULL);
+    GetWindowRect(hWnd, &rect);
+
+    setFixedSize(rc.width(), rc.height() - rect.bottom + rect.top);
     move(-7, 0);
-    btn_cont->setGeometry(width() / 2 - 35,0, 70, 30);
-    area->setGeometry(0, 50, width(), height());
+    btn_cont->setGeometry(rc.width() / 2 - 35,0, 70, 30);
+    area->setGeometry(0, 50, width(), height() - 50);
     paint->setGeometry(0, 0, width(), height());
     area->show();
+    paint->show();
 
 }
 
@@ -121,5 +131,4 @@ void MainWindow::chooseOpr()
 
     setFixedSize(500, 200);
     move(minPoint);
-
 }

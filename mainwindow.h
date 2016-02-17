@@ -10,6 +10,7 @@
 #include "paintwidget.h"
 #include <QScrollArea>
 
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -18,13 +19,14 @@ private:
     QPushButton *btn_ok, *btn_add, *btn_del, *btn_search, *btn_rgsearch;
     QPushButton *btn_cont;
     QLabel *lbl_tip;
-    B_tree<int> *tree;
     QPoint minPoint;
     QScrollArea *area;
     paintWidget *paint;
-
 private slots:
     void ok_clicked();
+    void add_clicked();
+    void del_clicked();
+    void search_clicked();
 public slots:
     void chooseOpr();
     void execOpr();

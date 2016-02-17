@@ -5,6 +5,8 @@
 #include <cstring>
 #include <queue>
 
+class paintWidget;
+
 template<typename Item>
 class B_tree
 {
@@ -14,6 +16,7 @@ private:
 		BTNode *parent;
 		Item *key;
 		BTNode **ptr;
+        int X;              //结点左边缘横坐标，绘图用
 	};
 	struct Result{
 		BTNode *pt;
@@ -31,7 +34,8 @@ private:
 	BTNode *rightSibling(BTNode *node);
 	BTNode *newNode();
 	void deleteNode(BTNode *node);
-	
+    int nodeLevel(BTNode *node);
+    friend class paintWidget;
 public:
 	B_tree(const int order = 4);
 	~B_tree();
@@ -339,6 +343,20 @@ template <typename Item>
 int B_tree<Item>::getLevelNum()
 {
     return levelNum;
+}
+
+template <typename Item>
+int B_tree<Item>::nodeLevel(BTNode *node)
+{
+    int i = 1;
+
+    while (node->parent != NULL)
+    {
+        node = node->parent;
+        i++;
+    }
+
+    return i;
 }
 
 #endif
