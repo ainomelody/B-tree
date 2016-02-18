@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstring>
 #include <queue>
+#include "thread.h"
 
 class paintWidget;
 
@@ -98,7 +99,7 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 	
 	if (moveptr != NULL)
 	{
-		delLoc.pt->key[delLoc.i] = moveptr.key[1];
+        delLoc.pt->key[delLoc.i] = moveptr->key[1];
 		delLoc.pt = moveptr;
 		delLoc.i = 1;
 	}
@@ -109,7 +110,8 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 	while (!finished)
 	{
 		std::memmove(delLoc.pt->key + delLoc.i, delLoc.pt->key + delLoc.i + 1, sizeof(Item) * (delLoc.pt->keynum - delLoc.i));	//修改关键字的顺序表
-		
+        threadPauseAndDraw();
+
 		if (delLoc.pt == root && delLoc.pt->keynum > 2 ||
 			delLoc.pt->keynum > minKeyNum)					//情况1，删除完成	
 			{
@@ -163,9 +165,9 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 				}
 				else if (rsib != NULL)
 				{
-					std::memmove(rsib->key + 1 + delLoc.pt->keynum, rsib->key, sizeof(Item) * (delLoc.pt + 1));
+                    std::memmove(rsib->key + 1 + delLoc.pt->keynum, rsib->key, sizeof(Item) * (delLoc.pt->keynum + 1));
 					rsib->keynum += delLoc.pt->keynum + 1;
-					std::memmove(rsib->ptr + 1 + delLoc.pt, rsib->ptr, sizeof(BTNode *) * (delLoc.pt + 1));
+                    std::memmove(rsib->ptr + 1 + delLoc.pt->keynum, rsib->ptr, sizeof(BTNode *) * (delLoc.pt->keynum + 1));
 					
 					for (int i = 1; i <= delLoc.pt->keynum; i++)	//复制剩余关键字
 						rsib->key[i] = delLoc.pt->key[i];
@@ -230,7 +232,7 @@ typename B_tree<Item>::Result B_tree<Item>::searchBTree(const Item & toSearch)
 		i = 1;
 		while (i <= p->keynum && p->key[i] < toSearch)
 			i++;
-		if (i <= p->keynum && p->keynum[i] == toSearch)
+        if (i <= p->keynum && p->key[i] == toSearch)
 			found = true;
 		else
 		{
@@ -239,9 +241,9 @@ typename B_tree<Item>::Result B_tree<Item>::searchBTree(const Item & toSearch)
 		}
 		
 		if (found)
-			return Result(p, i, true);
+            return Result{p, i, true};
 		
-		return Result(q, i, false);
+        return Result{q, i, false};
 	}
 }
 
@@ -265,6 +267,7 @@ bool B_tree<Item>::insertItem(const Item &toInsert)
 		insLoc.pt->ptr[insLoc.i] = ap;
 		insLoc.pt->keynum++;
 		
+        threadPauseAndDraw();
 		if (insLoc.pt->keynum < n)
 			finished = true;
 		else

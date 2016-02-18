@@ -26,11 +26,12 @@ private slots:
     void ok_clicked();
     void add_clicked();
     void del_clicked();
-    void search_clicked();
-public slots:
+//    void search_clicked();
+    void cont_clicked();
+public:
     void chooseOpr();
     void execOpr();
-public:
+    void drawTree();
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 };

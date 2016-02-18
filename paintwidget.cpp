@@ -31,13 +31,15 @@ void paintWidget::paintEvent(QPaintEvent *)
                 (int)pow(tree->n, tree->getLevelNum() - 1) + pxBetweenBtNode,
                 (nodeHeight + pxBetweenLevel) * tree->getLevelNum() + pxBetweenLevel);
 
+    if (tree->root->keynum == 0)
+        return;
     /*后序遍历，绘图*/
     stk.push(tree->root);
     while (!stk.empty())
     {
         lpNode = stk.top();
         if (lpNode->ptr[0] != NULL && lpLastNode != lpNode->ptr[lpNode->keynum])        //不是最底层结点，且子结点未被处理
-            for (int i = lpNode->keynum; i >= 0; i++)
+            for (int i = lpNode->keynum; i >= 0; i--)
                 stk.push(lpNode->ptr[i]);
         else
         {
@@ -81,7 +83,7 @@ void paintWidget::drawNode(B_tree<int>::BTNode *node, QPainter *painter)
     {
         node->X = bottomX;
         bottomX += width + pxBetweenBtNode;
-        if (node->parent->keynum == 0)                          //父结点只有一个子结点
+        if (node->parent && node->parent->keynum == 0)                          //父结点只有一个子结点
             bottomX += width + pxBetweenBtNode;
     }
     else

@@ -4,6 +4,8 @@
 #include <QPainter>
 #include "windows.h"
 #include <QDebug>
+#include "inputdialog.h"
+#include "thread.h"
 
 extern B_tree<int> *tree;
 
@@ -85,8 +87,9 @@ void MainWindow::ok_clicked()
     area->setWidget(paint);
     paint->hide();
     area->setAlignment(Qt::AlignCenter);                            //居中显示
-    connect(btn_add, SIGNAL(clicked(bool)), this, SLOT(execOpr()));
-    connect(btn_cont, SIGNAL(clicked(bool)), this, SLOT(chooseOpr()));
+    connect(btn_add, SIGNAL(clicked(bool)), this, SLOT(add_clicked()));
+    connect(btn_del, SIGNAL(clicked(bool)), this, SLOT(del_clicked()));
+    connect(btn_cont, SIGNAL(clicked(bool)), this, SLOT(cont_clicked()));
 }
 
 void MainWindow::execOpr()
@@ -114,7 +117,7 @@ void MainWindow::execOpr()
     paint->setGeometry(0, 0, width(), height());
     area->show();
     paint->show();
-
+    repaint();
 }
 
 void MainWindow::chooseOpr()
@@ -131,4 +134,42 @@ void MainWindow::chooseOpr()
 
     setFixedSize(500, 200);
     move(minPoint);
+}
+
+void MainWindow::add_clicked()
+{
+    int toAdd;
+    oneInputDialog *add_dlg = new oneInputDialog("添加", this);
+
+    toAdd = add_dlg->exec();
+    delete add_dlg;
+    execOpr();
+
+    WorkThread *addThread = new WorkThread(0, toAdd);
+    addThread->run();
+}
+
+void MainWindow::del_clicked()
+{
+    int toDel;
+    oneInputDialog *del_dlg = new oneInputDialog("删除", this);
+
+    toDel = del_dlg->exec();
+    delete del_dlg;
+    execOpr();
+
+    WorkThread *delThread = new WorkThread(1, toDel);
+    delThread->run();
+}
+
+void MainWindow::drawTree()
+{
+    btn_cont->setDisabled(true);
+    paint->repaint();
+    btn_cont->setEnabled(true);
+}
+
+void MainWindow::cont_clicked()
+{
+    wt.wakeAll();
 }
