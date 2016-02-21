@@ -239,12 +239,12 @@ typename B_tree<Item>::Result B_tree<Item>::searchBTree(const Item & toSearch)
 			q = p;
 			p = p->ptr[i - 1];
 		}
-		
-		if (found)
+	}
+	
+	if (found)
             return Result{p, i, true};
 		
-        return Result{q, i, false};
-	}
+    return Result{q, i, false};
 }
 
 template<typename Item>
@@ -261,8 +261,8 @@ bool B_tree<Item>::insertItem(const Item &toInsert)
 	while (!finished && insLoc.pt != NULL)
 	{
 		/*移动顺序表，插入关键字和指针*/
-		std::memmove(insLoc.pt->key + insLoc.i, insLoc.pt->key + insLoc.i + 1, sizeof(Item) * (insLoc.pt->keynum + 1 - insLoc.i));
-		std::memmove(insLoc.pt->ptr + insLoc.i, insLoc.pt->ptr + insLoc.i + 1, sizeof(BTNode *) * (insLoc.pt->keynum + 1 - insLoc.i));
+		std::memmove(insLoc.pt->key + insLoc.i + 1, insLoc.pt->key + insLoc.i, sizeof(Item) * (insLoc.pt->keynum + 1 - insLoc.i));
+		std::memmove(insLoc.pt->ptr + insLoc.i + 1, insLoc.pt->ptr + insLoc.i, sizeof(BTNode *) * (insLoc.pt->keynum + 1 - insLoc.i));
 		insLoc.pt->key[insLoc.i] = x;
 		insLoc.pt->ptr[insLoc.i] = ap;
 		insLoc.pt->keynum++;
@@ -280,8 +280,13 @@ bool B_tree<Item>::insertItem(const Item &toInsert)
 			{
 				ap->key[i - mid] = insLoc.pt->key[i];
 				ap->ptr[i - mid] = insLoc.pt->ptr[i];
+				if (ap->ptr[i - mid] != NULL)			//fix bug:移动指针后改变其parent
+					ap->ptr[i - mid]->parent = ap;
 			}
 			ap->ptr[0] = insLoc.pt->ptr[mid];
+			if (ap->ptr[0] != NULL)						//fix bug:移动指针后改变其parent
+				ap->ptr[0]->parent = ap;
+			
 			ap->parent = insLoc.pt->parent;
 			ap->keynum = insLoc.pt->keynum - mid;
 			
@@ -301,7 +306,7 @@ bool B_tree<Item>::insertItem(const Item &toInsert)
 		ap->parent = newRoot;
 		newRoot->keynum = 1;
 		newRoot->key[1] = x;
-		newRoot->ptr[0] = insLoc.pt;
+		newRoot->ptr[0] = root;		//fix bug:原为insLoc.pt(NULL)
 		newRoot->ptr[1] = ap;
 		root = newRoot;
         levelNum++;         //层数加1
