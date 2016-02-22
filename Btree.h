@@ -120,7 +120,7 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 
         work->run();
         if (delLoc.pt == root && (delLoc.pt->keynum > 0 || delLoc.pt->ptr[0] == NULL)
-            || delLoc.pt->keynum > minKeyNum)					//情况1，删除完成
+            || delLoc.pt->keynum >= minKeyNum)					//情况1，删除完成
 				finished = true;
 		else
 		{
@@ -160,10 +160,10 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 						if (lsib->ptr[lsib->keynum + i] = delLoc.pt->ptr[i])
 							lsib->ptr[lsib->keynum + i]->parent = lsib;
 					
-					deleteNode(delLoc.pt);
 					std::memmove(lsib->parent->ptr + index, lsib->parent->ptr + index + 1, sizeof(BTNode *) *(lsib->parent->keynum - index));
 					lsib->parent->ptr[lsib->parent->keynum] = NULL;
                     lsib->keynum += delLoc.pt->keynum;
+                    deleteNode(delLoc.pt);
 					
 					delLoc.pt = lsib->parent;								//对父结点中的关键字执行删除操作
 					delLoc.i = index;
@@ -182,9 +182,9 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 						if (rsib->ptr[i] = delLoc.pt->ptr[i])
 							rsib->ptr[i]->parent = rsib;
 					
-					deleteNode(delLoc.pt);
 					std::memmove(rsib->parent->ptr + index, rsib->parent->ptr + index + 1, sizeof(BTNode *) *(rsib->parent->keynum - index));
 					rsib->parent->ptr[rsib->parent->keynum] = NULL;
+                    deleteNode(delLoc.pt);
 					
 					delLoc.pt = rsib->parent;
 					delLoc.i = index + 1;
@@ -354,6 +354,7 @@ B_tree<Item>::~B_tree()
 			
 		deleteNode(node);
 	}
+    work->change();
 }
 
 template <typename Item>
