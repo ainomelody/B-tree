@@ -15,7 +15,9 @@ private:
     QPushButton *btn_ok;
 private slots:
     void ok_clicked();
+    void setReject();
 public:
+    bool isRejected;
     oneInputDialog(const char *type, QWidget *parent = 0, Qt::WindowFlags f = 0);
     ~oneInputDialog();
 };

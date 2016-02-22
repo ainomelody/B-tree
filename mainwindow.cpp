@@ -50,6 +50,7 @@ void MainWindow::ok_clicked()
     }
     /*基本操作的UI*/
     tree = new B_tree<int>(n);
+
     delete btn_ok;
     delete txt_order;
     btn_ok = NULL;
@@ -89,7 +90,7 @@ void MainWindow::ok_clicked()
     area->setAlignment(Qt::AlignCenter);                            //居中显示
     connect(btn_add, SIGNAL(clicked(bool)), this, SLOT(add_clicked()));
     connect(btn_del, SIGNAL(clicked(bool)), this, SLOT(del_clicked()));
-    connect(btn_cont, SIGNAL(clicked(bool)), this, SLOT(cont_clicked()));
+
 }
 
 void MainWindow::execOpr()
@@ -138,11 +139,16 @@ void MainWindow::chooseOpr()
 
 void MainWindow::add_clicked()
 {
+    treeThread = tree->getThread();
+    connect(btn_cont, SIGNAL(clicked(bool)), treeThread, SLOT(change()));
     int toAdd;
     oneInputDialog *add_dlg = new oneInputDialog("添加", this);
 
     toAdd = add_dlg->exec();
+    bool isReject = add_dlg->isRejected;
     delete add_dlg;
+    if (isReject)
+        return;
     execOpr();
 
     WorkThread *addThread = new WorkThread(0, toAdd);
@@ -155,7 +161,12 @@ void MainWindow::del_clicked()
     oneInputDialog *del_dlg = new oneInputDialog("删除", this);
 
     toDel = del_dlg->exec();
+    bool isReject = del_dlg->isRejected;
     delete del_dlg;
+
+    if (isReject)
+        return;
+
     execOpr();
 
     WorkThread *delThread = new WorkThread(1, toDel);
@@ -167,9 +178,4 @@ void MainWindow::drawTree()
     btn_cont->setDisabled(true);
     paint->repaint();
     btn_cont->setEnabled(true);
-}
-
-void MainWindow::cont_clicked()
-{
-    wt.wakeAll();
 }

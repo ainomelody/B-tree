@@ -10,7 +10,7 @@
 #include "paintwidget.h"
 #include <QScrollArea>
 
-
+class WorkThread;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -22,12 +22,13 @@ private:
     QPoint minPoint;
     QScrollArea *area;
     paintWidget *paint;
+    WorkThread* treeThread;
 private slots:
     void ok_clicked();
     void add_clicked();
     void del_clicked();
 //    void search_clicked();
-    void cont_clicked();
+
 public:
     void chooseOpr();
     void execOpr();

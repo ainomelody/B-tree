@@ -3,9 +3,18 @@
 #include <stack>
 #include <cmath>
 #include <QString>
-
+#include <QDebug>
 extern MainWindow *wptr;
 extern B_tree<int> *tree;
+
+long long  power(int x, int y)
+{
+    long long result = 1;
+
+    for (int i = 0; i < y; i++)
+        result *= x;
+    return result;
+}
 
 paintWidget::paintWidget(QWidget *parent) : QWidget(parent)
 {
@@ -14,7 +23,7 @@ paintWidget::paintWidget(QWidget *parent) : QWidget(parent)
     pxPerNum = 10;
     pxBetweenLevel = 20;
     maxNodeWidth = pxPerNum * 8 * tree->n;
-    bottomX = pxBetweenBtNode;
+    pxBetweenBtNode = 10;
 }
 
 
@@ -26,12 +35,13 @@ void paintWidget::paintEvent(QPaintEvent *)
 
     paint.setPen(Qt::black);
     paint.setBrush(palette().background());    //设置绘图的背景色与控件背景色相同
+    bottomX = pxBetweenBtNode;
 
     setGeometry(0, 0, (pxBetweenBtNode + maxNodeWidth) *
-                (int)pow(tree->n, tree->getLevelNum() - 1) + pxBetweenBtNode,
+                power(tree->n, tree->getLevelNum() - 1) + pxBetweenBtNode,
                 (nodeHeight + pxBetweenLevel) * tree->getLevelNum() + pxBetweenLevel);
 
-    if (tree->root->keynum == 0)
+    if (tree->root->keynum == 0 && tree->root->ptr[0] == NULL)
         return;
     /*后序遍历，绘图*/
     stk.push(tree->root);
@@ -48,7 +58,6 @@ void paintWidget::paintEvent(QPaintEvent *)
             stk.pop();
         }
     }
-
 }
 
 int paintWidget::nodeWidth(B_tree<int>::BTNode *node)
@@ -59,7 +68,7 @@ int paintWidget::nodeWidth(B_tree<int>::BTNode *node)
         result += numWidth(node->key[i]);
 
     if (result == 0)            //空结点，删除过程中出现
-        return (4 * pxPerNum);
+        return pxPerNum;
 
     return result;
 }
@@ -83,7 +92,7 @@ void paintWidget::drawNode(B_tree<int>::BTNode *node, QPainter *painter)
     {
         node->X = bottomX;
         bottomX += width + pxBetweenBtNode;
-        if (node->parent && node->parent->keynum == 0)                          //父结点只有一个子结点
+        if (node->parent && node->parent->keynum == 0)  //父结点只有一个子结点
             bottomX += width + pxBetweenBtNode;
     }
     else
@@ -110,8 +119,7 @@ void paintWidget::drawNode(B_tree<int>::BTNode *node, QPainter *painter)
                 painter->drawLine(x, y, x, y + nodeHeight);
         }
         if (node->ptr[i] != NULL)
-        painter->drawLine(x, y + nodeHeight,
-                          node->ptr[i]->X + nodeWidth(node->ptr[i]) / 2, childY);
+            painter->drawLine(x, y + nodeHeight,
+                              node->ptr[i]->X + nodeWidth(node->ptr[i]) / 2, childY);
     }
-
 }

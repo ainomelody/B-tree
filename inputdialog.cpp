@@ -14,7 +14,9 @@ oneInputDialog::oneInputDialog(const char *type, QWidget *parent, Qt::WindowFlag
     btn_ok->setGeometry(170, 30, 75, 25);
     btn_ok->setText(tr("确定"));
     setWindowTitle(tr(type));
+    isRejected = false;
 
+    connect(this, SIGNAL(rejected()), this, SLOT(setReject()));
     connect(btn_ok, SIGNAL(clicked(bool)), this, SLOT(ok_clicked()));
 }
 
@@ -37,4 +39,9 @@ oneInputDialog::~oneInputDialog()
     delete lbl_msg;
     delete btn_ok;
     delete txt_input;
+}
+
+void oneInputDialog::setReject()
+{
+    isRejected = true;
 }
