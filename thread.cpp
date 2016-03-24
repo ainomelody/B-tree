@@ -2,69 +2,63 @@
 #include "Btree.h"
 #include <QMessageBox>
 #include "mainwindow.h"
-#include <QDebug>
-#include <QMutexLocker>
 #include <QCoreApplication>
+
 extern B_tree<int> *tree;
 extern MainWindow *wptr;
-QWaitCondition wt;
-QMutex mute;
 
 WorkThread::WorkThread(int type, int arg, QObject *parent) : QThread(parent)
 {
     opr = type;
     oparg = arg;
-    stopped = true;
-    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+    running = true;
+//    connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
 }
 
 void WorkThread::change()
 {
-    stopped = false;
+    running = false;
 }
 
 void WorkThread::run()
 {
     QString argstr;
     argstr.setNum(oparg);
-    if (opr)
+    if (opr == 1)
     {
-        if(oparg == 0)
+        if (tree->deleteItem(oparg))
         {
-            wptr->drawTree();
-            while(stopped)
-            {
-                QCoreApplication::processEvents();
-            }
+            if (wptr->box_checked())
+                QMessageBox::information(wptr, tr("提示"), tr("运行时间为") +
+                                         QString::number(tree->getTime()) + tr("ms"),
+                                         QMessageBox::Ok);
         }
-        else if (!tree->deleteItem(oparg))
+        else
             QMessageBox::critical(wptr, tr("错误"), tr("树中不存在元素") + argstr,
+                                  QMessageBox::Ok);
+    }
+    else if (opr == 0)
+    {
+        if (tree->insertItem(oparg))
+        {
+            if (wptr->box_checked())
+                QMessageBox::information(wptr, tr("提示"), tr("运行时间为") +
+                                         QString::number(tree->getTime()) + tr("ms"),
+                                         QMessageBox::Ok);
+        }
+        else
+            QMessageBox::critical(wptr, tr("错误"), tr("树中已存在元素") + argstr,
                                   QMessageBox::Ok);
     }
     else
     {
-        if (!tree->insertItem(oparg))
-            QMessageBox::critical(wptr, tr("错误"), tr("树中已存在元素") + argstr,
-                                  QMessageBox::Ok);
+        wptr->drawTree();
+        while(running && wptr->isVisible())
+        {
+            QCoreApplication::processEvents();
+        }
     }
     if(opr != 5)
         wptr->chooseOpr();
-    stopped = true;
-
-
-}
-
-void threadPauseAndDraw()
-{
-    wptr->drawTree();
-    //QMutexLocker locker(&mute);
-   // mute.lock();
-    //qDebug() << "s1";
-    //wt.wait(&mute);
-    //QThread::sleep(10);
-    //qDebug() << "s2";
-   // wt.wakeAll();
-    while(1){
-        QCoreApplication::processEvents();
-    }
+    running = true;
 }

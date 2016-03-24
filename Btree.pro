@@ -15,11 +15,11 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     paintwidget.cpp \
-    inputdialog.cpp \
-    thread.cpp
+    thread.cpp \
+    inputdialog.cpp
 
 HEADERS  += mainwindow.h \
     Btree.h \
     paintwidget.h \
-    inputdialog.h \
-    thread.h
+    thread.h \
+    inputdialog.h

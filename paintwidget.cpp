@@ -1,13 +1,12 @@
 #include "paintwidget.h"
 #include "mainwindow.h"
 #include <stack>
-#include <cmath>
 #include <QString>
-#include <QDebug>
+
 extern MainWindow *wptr;
 extern B_tree<int> *tree;
 
-long long  power(int x, int y)
+long long power(int x, int y)
 {
     long long result = 1;
 
@@ -24,6 +23,9 @@ paintWidget::paintWidget(QWidget *parent) : QWidget(parent)
     pxBetweenLevel = 20;
     maxNodeWidth = pxPerNum * 8 * tree->n;
     pxBetweenBtNode = 10;
+    markInfo.pt = NULL;
+    markInfo.tag = false;
+    range = NULL;
 }
 
 
@@ -32,14 +34,16 @@ void paintWidget::paintEvent(QPaintEvent *)
     QPainter paint(this);
     std::stack<B_tree<int>::BTNode *> stk;
     B_tree<int>::BTNode *lpNode, *lpLastNode = NULL;
+    int height =  (nodeHeight + pxBetweenLevel) * tree->getLevelNum() + pxBetweenLevel;
 
     paint.setPen(Qt::black);
     paint.setBrush(palette().background());    //设置绘图的背景色与控件背景色相同
     bottomX = pxBetweenBtNode;
 
-    setGeometry(0, 0, (pxBetweenBtNode + maxNodeWidth) *
-                power(tree->n, tree->getLevelNum() - 1) + pxBetweenBtNode,
-                (nodeHeight + pxBetweenLevel) * tree->getLevelNum() + pxBetweenLevel);
+    /*Bug fixed:原为setGeometry，拖动后图形重叠，此处需要设置最大和最小size*/
+    setFixedSize((pxBetweenBtNode + maxNodeWidth) *
+                  power(tree->n, tree->getLevelNum() - 1) + pxBetweenBtNode,
+                  height);
 
     if (tree->root->keynum == 0 && tree->root->ptr[0] == NULL)
         return;
@@ -58,6 +62,20 @@ void paintWidget::paintEvent(QPaintEvent *)
             stk.pop();
         }
     }
+
+    if (markInfo.tag)
+    {
+        paint.setPen(Qt::red);
+        paint.setBrush(Qt::NoBrush);
+        int x = markInfo.pt->X - 5;
+        int y = tree->nodeLevel(markInfo.pt) * (pxBetweenLevel + nodeHeight) - nodeHeight - 5;
+        for (int i = 1; i < markInfo.i; i++)
+            x += numWidth(markInfo.pt->key[i]);
+
+        int width = numWidth(markInfo.pt->key[markInfo.i]) + 10;
+        paint.drawRect(x, y, width, nodeHeight + 10);
+    }
+    setFixedSize(bottomX, height);
 }
 
 int paintWidget::nodeWidth(B_tree<int>::BTNode *node)
@@ -112,8 +130,11 @@ void paintWidget::drawNode(B_tree<int>::BTNode *node, QPainter *painter)
         if (i != 0)
         {
             int nwidth = numWidth(node->key[i]);                //数字宽度
+            if (range != NULL && range->find(node->key[i]) != range->end())
+                painter->setPen(Qt::red);
             painter->drawText(x, y, nwidth, nodeHeight,
-                              Qt::AlignCenter, QString().setNum(node->key[i])); //显示数字
+                              Qt::AlignCenter, QString::number(node->key[i])); //显示数字
+            painter->setPen(Qt::black);
             x += nwidth;                                        //改动横坐标
             if (i < node->keynum)                               //绘制分割线
                 painter->drawLine(x, y, x, y + nodeHeight);
@@ -122,4 +143,29 @@ void paintWidget::drawNode(B_tree<int>::BTNode *node, QPainter *painter)
             painter->drawLine(x, y + nodeHeight,
                               node->ptr[i]->X + nodeWidth(node->ptr[i]) / 2, childY);
     }
+}
+
+void paintWidget::markNum(int num)
+{
+    markInfo = tree->searchBTree(num);
+    if (!markInfo.tag)
+    {
+        QMessageBox::critical(wptr, tr("错误"), tr("找不到元素") + QString::number(num),
+                              QMessageBox::Ok);
+        return;
+    }
+    repaint();
+}
+
+void paintWidget::rangeMark(std::set<int> *numRange)
+{
+    range = numRange;
+    repaint();
+}
+
+void paintWidget::removeMark()
+{
+    markInfo.tag = false;
+    delete range;
+    range = NULL;
 }

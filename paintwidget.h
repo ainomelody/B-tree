@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPainter>
 #include "Btree.h"
+#include <set>
 
 template <typename Item>
 class B_tree;
@@ -20,14 +21,18 @@ private:
     int pxBetweenBtNode;    //最底层结点之间的距离
     int maxNodeWidth;       //结点的最大宽度
     int bottomX;            //最底层结点的横坐标
+    B_tree<int>::Result markInfo;
+    std::set<int> *range;
 
     void paintEvent(QPaintEvent *);
     void drawNode(B_tree<int>::BTNode *node, QPainter *painter);
     int nodeWidth(B_tree<int>::BTNode *node);   //计算一个结点的宽度
     int numWidth(int num);                      //一个数的宽度
-    int levelSpace(int level);                  //返回由level指定的层的空隙宽
 public:
     explicit paintWidget(QWidget *parent = 0);
+    void markNum(int num);
+    void rangeMark(std::set<int> *numRange);
+    void removeMark();
 };
 
 #endif // PAINTWIDGET_H

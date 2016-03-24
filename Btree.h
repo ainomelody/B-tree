@@ -1,10 +1,14 @@
 #ifndef BTREE_H
 #define BTREE_H
 
-#include <vector>
+#include <set>
 #include <cstring>
 #include <queue>
 #include "thread.h"
+#include <QFile>
+#include <QMessageBox>
+#include <QTime>
+#include <stack>
 
 class paintWidget;
 template<typename Item>
@@ -35,16 +39,23 @@ private:
 	BTNode *newNode();
 	void deleteNode(BTNode *node);
     int nodeLevel(BTNode *node);
+    void readNode(BTNode *node, QFile *file);
+    long time;
     friend class paintWidget;
+
 public:
 	B_tree(const int order = 4);
 	~B_tree();
     WorkThread* getThread();
 	bool insertItem(const Item &toInsert);
 	bool deleteItem(const Item &toDelete);
-	//Result search(const Item &k);
-	std::vector<Item> RangeSerach(const Item& LBound, const Item& UBound);
+    bool search(const Item &toSearch);
+    std::set<Item> *rangeSerach(const Item& LBound, const Item& UBound);
     int getLevelNum();
+    void saveToFile(QFile *file);
+    bool isEmpty();
+    void loadFromFile(QFile *file);
+    long getTime();
 };
 
 template<typename Item>
@@ -92,33 +103,40 @@ typename B_tree<Item>::BTNode * B_tree<Item>::rightSibling(BTNode *node)
 template<typename Item>
 bool B_tree<Item>::deleteItem(const Item &toDelete)
 {
-	Result delLoc = searchBTree(toDelete);
 	BTNode *moveptr;
-	
+    QTime count;
+    count.start();
+    Result delLoc = searchBTree(toDelete);
+
 	if (!delLoc.tag)
 		return false;
 	
-	/*将要删除元素右边子树的最小值移到此位置,改为删除此最小元素*/
-	moveptr = delLoc.pt->ptr[delLoc.i];
-	while (moveptr != NULL && moveptr->ptr[0] != NULL)
-		moveptr = moveptr->ptr[0];
-	
-	if (moveptr != NULL)
-	{
+    time = 0;
+
+    /*将要删除元素右边子树的最小值移到此位置,改为删除此最小元素*/
+    moveptr = delLoc.pt->ptr[delLoc.i];
+    while (moveptr != NULL && moveptr->ptr[0] != NULL)
+        moveptr = moveptr->ptr[0];
+
+    if (moveptr != NULL)
+    {
         delLoc.pt->key[delLoc.i] = moveptr->key[1];
-		delLoc.pt = moveptr;
-		delLoc.i = 1;
-	}
+        delLoc.pt = moveptr;
+        delLoc.i = 1;
+    }
 	
 	bool finished = false;
 	int minKeyNum = (n + 1) / 2 - 1;
 	
 	while (!finished)
-	{
+    {
 		std::memmove(delLoc.pt->key + delLoc.i, delLoc.pt->key + delLoc.i + 1, sizeof(Item) * (delLoc.pt->keynum - delLoc.i));	//修改关键字的顺序表
         delLoc.pt->keynum--;
 
+        time += count.elapsed();
         work->run();
+        count.restart();
+
         if (delLoc.pt == root && (delLoc.pt->keynum > 0 || delLoc.pt->ptr[0] == NULL)
             || delLoc.pt->keynum >= minKeyNum)					//情况1，删除完成
 				finished = true;
@@ -135,8 +153,16 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
                 delLoc.pt->keynum++;
 				delLoc.pt->key[delLoc.i] = keyInParent;
 				keyInParent = lsib->key[lsib->keynum];
-				delLoc.pt = lsib;
-				delLoc.i = lsib->keynum;
+
+                BTNode * &ptrToInsert = delLoc.pt->ptr[0];
+                std::memmove(delLoc.pt->ptr + 1, delLoc.pt->ptr, sizeof(BTNode *) * (delLoc.pt->keynum));
+                ptrToInsert = lsib->ptr[lsib->keynum];
+                if (ptrToInsert)
+                    ptrToInsert->parent = delLoc.pt;
+                lsib->ptr[lsib->keynum] = NULL;
+
+                delLoc.pt = lsib;
+                delLoc.i = lsib->keynum;
 			}
 			else if (rsib != NULL && rsib->keynum > minKeyNum)	//情况2，移动右兄弟中最小关键字
 			{
@@ -145,8 +171,17 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
                 delLoc.pt->keynum++;
 				delLoc.pt->key[delLoc.i] = keyInParent;
 				keyInParent = rsib->key[1];
-				delLoc.pt = rsib;
-				delLoc.i = 1;
+
+                BTNode * &ptrToInsert = delLoc.pt->ptr[delLoc.pt->keynum];
+                ptrToInsert = rsib->ptr[0];
+                if (ptrToInsert)
+                    ptrToInsert->parent = delLoc.pt;
+
+                std::memmove(rsib->ptr, rsib->ptr + 1, sizeof(BTNode *) * rsib->keynum);
+                rsib->ptr[rsib->keynum] = NULL;
+
+                delLoc.pt = rsib;
+                delLoc.i = 1;
 			}
 			else							//情况3：合并结点
 			{				
@@ -197,12 +232,12 @@ bool B_tree<Item>::deleteItem(const Item &toDelete)
 					root->parent = NULL;
 					finished = true;
                     levelNum--;
+                    time += count.elapsed();
                     work->run();
 				}
 			}
 		}
 	}
-	
 	return true;
 }
 
@@ -225,6 +260,7 @@ B_tree<Item>::B_tree(const int order)
 {
 	n = order;
     work = new WorkThread(5,0);
+    QObject::connect(work, SIGNAL(finished()), work, SLOT(deleteLater()));
 	root = newNode();				//一个key数为0的结点表示空树
     levelNum = 1;
 }
@@ -261,11 +297,13 @@ bool B_tree<Item>::insertItem(const Item &toInsert)
 	Item x = toInsert;
 	BTNode *ap = NULL;
 	bool finished = false;
+    QTime count;
+    count.start();
 	Result insLoc = searchBTree(toInsert);
 	
 	if (insLoc.tag)
 		return false;
-	
+    time = 0;
 	while (!finished && insLoc.pt != NULL)
 	{
 		/*移动顺序表，插入关键字和指针*/
@@ -275,7 +313,10 @@ bool B_tree<Item>::insertItem(const Item &toInsert)
 		insLoc.pt->ptr[insLoc.i] = ap;
 		insLoc.pt->keynum++;
 
+        time += count.elapsed();
         work->run();
+        count.restart();
+
 		if (insLoc.pt->keynum < n)
 			finished = true;
 		else
@@ -318,6 +359,7 @@ bool B_tree<Item>::insertItem(const Item &toInsert)
 		root = newRoot;
         levelNum++;         //层数加1
         root->parent = NULL;
+        time += count.elapsed();
         work->run();
 	}
 	return true;
@@ -355,6 +397,8 @@ B_tree<Item>::~B_tree()
 		deleteNode(node);
 	}
     work->change();
+    work->terminate();
+    delete work;
 }
 
 template <typename Item>
@@ -375,6 +419,161 @@ int B_tree<Item>::nodeLevel(BTNode *node)
     }
 
     return i;
+}
+
+template <typename Item>
+void B_tree<Item>::saveToFile(QFile *file)
+{
+    QTime count;
+
+    count.start();
+
+    file->write((const char *)&n, sizeof(int));
+    file->write((const char *)&levelNum, sizeof(int));
+    std::queue<BTNode *> que;
+    que.push(root);
+    BTNode *node;
+
+    while (!que.empty())
+    {
+        node = que.front();
+        que.pop();
+        file->write((const char *)&(node->keynum), sizeof(int));
+        for (int i = 1; i <= node->keynum; i++)
+            file->write((const char *)(node->key + i), sizeof(Item));
+        for (int i = 0; i <= node->keynum; i++)
+        {
+            file->write((const char *)(node->ptr + i), sizeof(BTNode *));
+            if (node->ptr[i] != NULL)
+                que.push(node->ptr[i]);
+        }
+    }
+
+    time = count.elapsed();
+}
+
+template <typename Item>
+bool B_tree<Item>::isEmpty()
+{
+    return (root == NULL || root->keynum == 0);
+}
+
+template <typename Item>
+void B_tree<Item>::loadFromFile(QFile *file)
+{
+    QTime count;
+
+    count.start();
+    std::queue<BTNode *> que;
+    BTNode *node;
+    file->read((char *)&levelNum, sizeof(int));
+    readNode(root, file);
+    que.push(root);
+
+    while (!que.empty())
+    {
+        node = que.front();
+        que.pop();
+        for (int i = 0; i <= node->keynum; i++)
+            if (node->ptr[i] != NULL)
+            {
+                node->ptr[i] = newNode();
+                node->ptr[i]->parent = node;
+                readNode(node->ptr[i], file);
+                que.push(node->ptr[i]);
+            }
+            else
+                break;
+    }
+
+    time = count.elapsed();
+}
+
+template <typename Item>
+void B_tree<Item>::readNode(BTNode *node, QFile *file)
+{
+    file->read((char *)&(node->keynum), sizeof(int));
+    for (int i = 1; i <= node->keynum; i++)
+        file->read((char *)(node->key + i), sizeof(Item));
+    for (int i = 0; i <= node->keynum; i++)
+        file->read((char *)(node->ptr + i), sizeof(BTNode *));
+}
+
+template <typename Item>
+long B_tree<Item>::getTime()
+{
+    return time;
+}
+
+template <typename Item>
+bool B_tree<Item>::search(const Item &toSearch)
+{
+    Result sres = searchBTree(toSearch);
+
+    return sres.tag;
+}
+
+template <typename Item>
+std::set<Item> *B_tree<Item>::rangeSerach(const Item &LBound, const Item &UBound)
+{
+    BTNode *node;
+    QTime count;
+
+    std::stack<BTNode *> nodestk;
+    std::stack<int> numstk;
+    int i;
+    Result max, min;
+
+    count.start();
+
+    std::set<Item> *result = new std::set<Item>;
+    max = searchBTree(UBound);
+    min = searchBTree(LBound);
+
+	/*中序遍历*/
+    node = root;
+    i = 0;
+    while ((node && i <= node->keynum) || !nodestk.empty())
+    {
+        if (node)                           //访问子树
+        {
+            if (i < node->keynum)           //该结点后续仍需访问，将结点和索引压栈
+            {
+                if (node == max.pt && i == max.i)   //遇到最大值，停止执行
+                    break;
+                if (node == min.pt && i == 0)       //遇到最小值，当前结点不为叶结点
+                {
+                    result->insert(node->key[min.i]);   //将最小值插入set
+                    i = min.i - 1;                      //继续访问最小值右边的子树
+                }
+
+                nodestk.push(node);
+                numstk.push(i + 1);
+            }
+            node = node->ptr[i];            //访问node的第i个子树
+            i = 0;
+        }
+        else                                //访问关键字
+        {
+            node = nodestk.top();
+            nodestk.pop();
+            i = numstk.top();
+            numstk.pop();
+            if (node->ptr[0] == NULL)       //最底层结点，直接访问所有关键字
+            {
+                for (int num = i; num <= node->keynum; num++)
+                    if (node->key[num] >= LBound && node->key[num] <= UBound)
+                        result->insert(node->key[num]);
+                if (node->key[node->keynum] >= UBound)
+                    break;
+                node = NULL;                //node设为NULL，则下次循环继续从栈中弹出结点
+            }
+            else if (node->key[i] >= LBound && node->key[i] <= UBound)
+                result->insert(node->key[i]);
+        }
+    }
+    time = count.elapsed();
+    return result;
 }
 
 #endif
